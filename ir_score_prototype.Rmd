@@ -1,0 +1,52 @@
+---
+title: "ir_score_model"
+author: "Ravi Hela"
+date: "29/05/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Read Files
+```{r}
+
+ir_data <- read_excel("ir_data.xlsx", sheet = "ir_data")
+numerical_features <-
+  read_excel("ir_data.xlsx", sheet = "numerical_features")
+cat_features <- read_excel("ir_data.xlsx", sheet = "cat_features")
+
+```
+
+```{r}
+head(ir_data)
+ir_data %>%
+  select(ir_id, unique(numerical_features$feature)) %>%
+  pivot_longer(-ir_id, names_to = "feature", values_to = "value") %>%
+  group_by(feature) %>% left_join(numerical_features) %>%  rowwise() %>%
+  mutate(check_limit = between(value, l_limit, u_limit)) %>%
+  filter(check_limit == TRUE) %>%
+  select(-l_limit,-u_limit,-value,-check_limit) %>%
+  pivot_wider(names_from = feature, values_from = score)
+                               
+                               
+
+
+```
+
+
+
+```{r}
+
+val <- 3
+
+lapply(numerical_features %>% filter(feature == "ttl_cnt_pli"),
+       return_score,
+       val)
+
+
+
+
+```
+
