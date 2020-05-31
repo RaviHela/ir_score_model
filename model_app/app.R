@@ -102,7 +102,7 @@ x <- numerical_feature_scoring %>%
 
 # ---- 1.0 UI ----
 ui <- navbarPage(
-    title = "CBCO-\n IR Scoring",
+    title = "Scoring Model",
     collapsible = TRUE,
     inverse     = TRUE,
     theme       = shinytheme("paper"),
