@@ -1,15 +1,17 @@
 ---
 title: "ir_score_model"
 author: "Ravi Hela"
-date: "29/05/2020"
+date: "5/30/2020"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE) 
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readxl)
+library(tidyquant)
 ```
 
-# Read Files
 ```{r}
 
 ir_data <- read_excel("ir_data.xlsx", sheet = "ir_data")
@@ -19,34 +21,77 @@ cat_features <- read_excel("ir_data.xlsx", sheet = "cat_features")
 
 ```
 
+
+
+# score numerical features 
 ```{r}
-head(ir_data)
-ir_data %>%
+
+numerical_feature_scoring <- ir_data %>%
+  
+  #processing numerical features
   select(ir_id, unique(numerical_features$feature)) %>%
   pivot_longer(-ir_id, names_to = "feature", values_to = "value") %>%
-  group_by(feature) %>% left_join(numerical_features) %>%  rowwise() %>%
-  mutate(check_limit = between(value, l_limit, u_limit)) %>%
+  
+  #tag ratings
+  left_join(numerical_features) %>%  rowwise() %>%
+  
+  #estimate and pull relevant ratings
+  mutate(check_limit =  (value > l_limit & value <= u_limit)) %>%
   filter(check_limit == TRUE) %>%
+  
+  #reshape to longitudanal data
   select(-l_limit,-u_limit,-value,-check_limit) %>%
-  pivot_wider(names_from = feature, values_from = score)
-                               
-                               
-
+  pivot_wider(names_from = feature, values_from = score) %>%
+  
+  #sum up scores
+  mutate(
+    total_numerical_score = ttl_cnt_pli + ttl_cnt_acc,
+    num_numerical_features = length(unique(cat_features$feature))
+  )
 
 ```
 
 
+# score categorical features 
 
 ```{r}
 
-val <- 3
+categorical_feature_scoring <- ir_data %>%
+  
+  #processing numerical features
+  select(ir_id, unique(cat_features$feature)) %>%
+  pivot_longer(-ir_id, names_to = "feature", values_to = "value") %>%
+  
+  #tag ratings
+  left_join(cat_features) %>%
+  
+  #estimate and pull relevant ratings
+  # mutate(check_limit =  (value > l_limit & value <= u_limit)) %>%
+  # filter(check_limit == TRUE) %>%
+  
+  #reshape to longitudanal data
+  select(-value) %>%
+  pivot_wider(names_from = feature, values_from = score) %>%
+  
+  #sum up scores
+  mutate(total_cat_score = region + Industry + flag,
+         num_cat_features = length(unique(cat_features$feature)))
 
-lapply(numerical_features %>% filter(feature == "ttl_cnt_pli"),
-       return_score,
-       val)
+```
 
+#combine numerical and categorical
+```{r}
 
-
+numerical_feature_scoring %>%
+  inner_join(categorical_feature_scoring) %>%
+  mutate(total_score = total_numerical_score + total_cat_score,
+         score_on_5 = round(total_score / (
+           num_cat_features + num_numerical_features
+         ))) %>% 
+  mutate(ir_id = as.factor(ir_id)) %>%
+  mutate(ir_id = fct_reorder(ir_id, score_on_5)) %>%
+  
+  ggplot(aes(x = ir_id, y = score_on_5)) + geom_col() + coord_flip() + theme_tq()
 
 ```
 
