@@ -145,10 +145,23 @@ ui <- navbarPage(
                                            inputId = "select_sales",
                                            label = "Sales Size",
                                            value = "ALL"
-                                       )
+                                       ),
+                                       br(),
+                                       br(),
+                                       shiny::sliderInput("DatesMerge",
+                                                   "Dates:",
+                                                   min = as.Date("2016-01-01","%Y-%m-%d"),
+                                                   max = as.Date("2016-12-01","%Y-%m-%d"),
+                                                   value=c(as.Date("2016-01-01"),as.Date("2016-12-01")),
+                                                   timeFormat="%b-%C"
+                                                   ),
+                                       
+                                       
+                                       
                                    )
                                    
                                ),
+                               br(),
                                br(),
                                fluidRow(shiny::actionButton(inputId = "submit_num", "Update Rules", class = "btn-primary"))),
                         
